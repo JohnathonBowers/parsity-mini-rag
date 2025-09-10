@@ -28,6 +28,19 @@ if (fs.existsSync(envLocalPath)) {
 
 import { openaiClient } from '../../libs/openai/openai';
 
+// Load embeddings cache
+let embeddingsCache: Record<string, number[]> = {};
+try {
+	const cachePath = path.join(__dirname, '../../../embeddings-cache.json');
+	if (fs.existsSync(cachePath)) {
+		embeddingsCache = JSON.parse(fs.readFileSync(cachePath, 'utf8'));
+		console.log('✅ Loaded embeddings cache from file');
+	}
+} catch (error: unknown) {
+	console.log('⚠️  Error loading embeddings cache:', error);
+	console.log('⚠️  No embeddings cache found, will use OpenAI API');
+}
+
 // Vector operations
 function addVectors(a: number[], b: number[]): number[] {
 	return a.map((val, i) => val + b[i]);
@@ -46,6 +59,12 @@ function cosineSimilarity(a: number[], b: number[]): number {
 
 // Get embedding for a word/phrase
 async function getEmbedding(text: string): Promise<number[]> {
+	// Check cache first
+	if (embeddingsCache[text]) {
+		return embeddingsCache[text];
+	}
+
+	console.log(`⚠️  Word "${text}" not in cache, fetching from OpenAI API...`);
 	const response = await openaiClient.embeddings.create({
 		model: 'text-embedding-3-small',
 		dimensions: 512,
@@ -303,3 +322,5 @@ async function demonstrateWordArithmetic() {
 
 // Run the demonstration
 demonstrateWordArithmetic().catch(console.error);
+
+// generateEmbeddingsCache().catch(console.error);

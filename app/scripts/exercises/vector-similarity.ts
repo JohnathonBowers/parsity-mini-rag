@@ -80,8 +80,8 @@ export function findTopSimilarDocuments(
 	return []; // Replace with your implementation
 }
 
-// Test data
-const testDocuments: Document[] = [
+// Example test data for reference
+export const exampleDocuments: Document[] = [
 	{
 		id: 'doc1',
 		title: 'Introduction to Vector Databases',
@@ -109,40 +109,10 @@ const testDocuments: Document[] = [
 	},
 ];
 
-// Query vector - similar to documents about vectors
-const queryVector = [0.75, 0.25, 0.8, 0.1];
+// Example query vector - similar to documents about vectors
+export const exampleQueryVector = [0.75, 0.25, 0.8, 0.1];
 
-// Test the function if the SHOW_SOLUTION environment variable is set
-
-// Solution implementation
-const solution = (
-	query: number[],
-	docs: Document[],
-	minSim: number,
-	top: number
-) => {
-	const withSimilarities = docs.map((doc) => ({
-		document: doc,
-		similarity: cosineSimilarity(query, doc.embedding),
-	}));
-
-	const filtered = withSimilarities.filter(
-		(item) => item.similarity >= minSim
-	);
-	const sorted = filtered.sort((a, b) => b.similarity - a.similarity);
-	return sorted.slice(0, top);
-};
-
-// Run the solution
-const results = solution(queryVector, testDocuments, 0.7, 3);
-console.log('=== SOLUTION RESULTS ===');
-results.forEach((result, index) => {
-	console.log(
-		`${index + 1}. ${
-			result.document.title
-		} (similarity: ${result.similarity.toFixed(3)})`
-	);
-});
+// Example usage and expected output
 console.log('=== VECTOR SIMILARITY EXERCISE ===');
 console.log(
 	'\nYour task is to implement the findTopSimilarDocuments function.'
@@ -155,7 +125,7 @@ console.log('2. Filter out documents with similarity below the threshold');
 console.log('3. Sort the remaining documents by similarity (highest first)');
 console.log('4. Return the top K results');
 console.log('\nTo test your implementation, run:');
-console.log('yarn exercise:vectors:test');
+console.log('yarn test vector-similarity.test.ts');
 
 // Simple test function to verify the implementation
 export function runTests(): boolean {
