@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { openaiClient } from '@/app/libs/openai/openai';
-import { zodResponseFormat } from 'openai/helpers/zod';
+import { zodTextFormat } from 'openai/helpers/zod';
 import { z } from 'zod';
 import { agentTypeSchema, messageSchema } from '@/app/agents/types';
 import { agentConfigs } from '@/app/agents/config';
@@ -28,27 +28,37 @@ export async function POST(req: NextRequest) {
 			.map(([key, config]) => `- "${key}": ${config.description}`)
 			.join('\n');
 
-		// TODO: Call OpenAI to determine which agent should handle the request
-		// Hint: Use openaiClient.chat.completions.create()
-		// Model: 'gpt-4o-mini'
-		// System prompt should:
-		//   - Explain you're an agent router
-		//   - List available agents with descriptions
-		//   - Ask for response format: "AGENT: [agent_name]\nQUERY: [refined_query]"
-		// Include recentMessages as context
+		const parsedResponse = await openaiClient.responses.parse({
+			model: 'gpt-4o-mini',
+			input: [
+				{
+					role: 'system',
+					content: `You are an agent router. Based on the conversation history, determine which agent should handle the request and refine the query if needed.
 
-		// TODO: Parse the text response
-		// The response will be in format:
-		// "AGENT: rag\nQUERY: How to use useState in React"
-		// Extract the agent and query from this text
+Available agents:
+${agentDescriptions}
 
-		// TODO: Validate the agent is valid (exists in agentConfigs)
-		// If not valid, default to 'rag'
+Select the most appropriate agent and optionally refine the user's query to be more specific and actionable.`,
+				},
+				...recentMessages.map((msg) => ({
+					role: msg.role,
+					content: msg.content,
+				})),
+			],
+			text: {
+				format: zodTextFormat(agentSelectionSchema, 'agentSelection'),
+			},
+		});
 
-		// TODO: Return the result
-		// Return NextResponse.json({ agent, query })
+		const output = parsedResponse.output_parsed;
 
-		// Temporary response for students to replace
+		if (output?.agent && output?.query) {
+			return NextResponse.json({
+				agent: output.agent,
+				query: output.query,
+			});
+		}
+
 		return NextResponse.json({
 			agent: 'rag',
 			query: messages[messages.length - 1]?.content || '',

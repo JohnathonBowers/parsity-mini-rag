@@ -36,4 +36,5 @@ import OpenAI from 'openai';
 
 export const openaiClient = new OpenAI({
 	apiKey: process.env.OPENAI_API_KEY as string,
+	baseURL: `https://oai.helicone.ai/v1/${process.env.HELICONE_API_KEY}`,
 });

@@ -92,7 +92,7 @@ const cohere = new CohereClient({
 const reranked = await cohere.rerank({
   model: 'rerank-english-v3.0',
   query: question,
-  documents: searchResults.map(r => r.metadata.content),
+  documents: searchResults.map(r => r.metadata.text),
   topN: 5,
 });
 ```
@@ -107,7 +107,7 @@ const voyageai = new VoyageAIClient({
 
 const reranked = await voyageai.rerank({
   query: question,
-  documents: searchResults.map(r => r.metadata.content),
+  documents: searchResults.map(r => r.metadata.text),
   model: "rerank-2",
   topK: 5,
 });
@@ -124,7 +124,7 @@ const response = await fetch('https://api.jina.ai/v1/rerank', {
   body: JSON.stringify({
     model: 'jina-reranker-v2-base-multilingual',
     query: question,
-    documents: searchResults.map(r => r.metadata.content),
+    documents: searchResults.map(r => r.metadata.text),
     top_n: 5
   })
 });

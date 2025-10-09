@@ -1,7 +1,11 @@
 import { z } from 'zod';
 import { StreamTextResult } from 'ai';
 
-export const agentTypeSchema = z.enum(['linkedin', 'rag']);
+export const agentTypeSchema = z
+	.enum(['linkedin', 'rag'])
+	.describe(
+		'The agent to use: linkedin for help writing posts, rag for help with technical questions'
+	);
 
 export type AgentType = z.infer<typeof agentTypeSchema>;
 
@@ -19,7 +23,7 @@ export interface AgentRequest {
 	messages: Message[]; // Conversation history
 }
 
-export type AgentResponse = StreamTextResult<Record<string, never>, unknown>;
+export type AgentResponse = StreamTextResult<Record<string, never>, never>;
 
 export interface AgentConfig {
 	name: string;

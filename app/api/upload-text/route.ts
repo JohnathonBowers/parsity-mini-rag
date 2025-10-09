@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
 			id: chunk.id,
 			values: embeddingResponse.data[idx].embedding,
 			metadata: {
-				content: chunk.content,
+				text: chunk.content,
 				source: 'user-text',
 				chunkIndex: chunk.metadata.chunkIndex,
 				totalChunks: chunk.metadata.totalChunks,

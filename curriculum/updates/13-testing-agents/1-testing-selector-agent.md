@@ -1,515 +1,330 @@
 # Testing the Selector Agent
 
-The selector agent is critical to your RAG system - it routes queries to the right specialized agent. In this module, you'll learn how to test it effectively using structured output validation.
+The selector agent is critical to your RAG system - it routes queries to the right specialized agent. In this module, you'll learn how to test it effectively.
 
 ---
 
 ## What You'll Learn
 
-- Why testing AI agents is critical
-- How to test structured output with Zod schemas
-- Writing effective test cases for agent routing
-- Handling edge cases and unsupported queries
+-   Why testing AI agents is challenging
+-   What you can (and can't) test with LLMs
+-   How to write simple, effective tests
+-   Running and debugging your test suite
 
 ---
 
-## Why Test AI Agents?
+## The Challenge: Non-Deterministic AI
 
-### The Challenge with AI Testing
+### Why Testing AI is Different
 
-AI outputs are non-deterministic, but that doesn't mean we can't test them!
-
-**What we CAN'T test:**
-- ❌ Exact output text (changes every time)
-- ❌ Creative responses (vary with temperature)
-
-**What we CAN test:**
-- ✅ Output structure (JSON schema)
-- ✅ Agent selection logic (LinkedIn vs Knowledge Base)
-- ✅ Error handling (invalid inputs)
-- ✅ Response time (performance)
-
----
-
-## Understanding the Selector Agent
-
-### How It Works
-
-```
-User Query
-    ↓
-Selector Agent (gpt-4o-mini + structured output)
-    ↓
-Returns: { selectedAgent, agentQuery, model }
-    ↓
-Routes to LinkedIn or Knowledge Base agent
-```
-
-### The Structured Output
-
-Using Zod schema ensures consistent JSON responses:
+LLMs are **non-deterministic** - they can give different outputs for the same input:
 
 ```typescript
-export const agentResponseSchema = z.object({
-	selectedAgent: agentSchema, // 'linkedin' | 'knowledgeBase'
-	agentQuery: z.string(),     // Refined query for the agent
-});
+// Same query, different times:
+selectAgent("How do hooks work?")
+→ "Explain React hooks concepts"  // First run
+→ "How to use React hooks"        // Second run
+→ "React hooks tutorial"          // Third run
 ```
 
-**Why Zod + Structured Output?**
-- Guarantees valid JSON (no parsing errors)
-- Type-safe responses
-- Schema validation at runtime
-- OpenAI enforces the schema
+Even with `temperature=0`, you get slight variations.
+
+### What This Means for Testing
+
+**❌ DON'T test:**
+- Exact text output ("should return 'Explain React hooks'")
+- Specific word choices
+- Response creativity or style
+
+**✅ DO test:**
+- Output structure (has required fields)
+- Agent routing decisions (linkedin vs rag)
+- Response validity (not empty, proper type)
+- Error handling
 
 ---
 
-## Current Test Suite
+## Our Testing Strategy
 
-Let's examine the existing tests in `app/libs/openai/agents/__tests__/selector-agent.test.ts`:
+We'll keep tests simple and focused on what matters:
 
-```typescript
-describe('selectAgent', () => {
-	const testCases = [
-		{
-			name: 'should select LinkedIn agent for LinkedIn-related queries',
-			query: 'Write a LinkedIn post about learning JavaScript',
-			expectedAgent: 'linkedin',
-			expectedModel: AGENT_CONFIG.linkedin.model,
-		},
-		{
-			name: 'should select Knowledge Base agent for coding queries',
-			query: 'Why are enums in TypeScript useful?',
-			expectedAgent: 'knowledgeBase',
-			expectedModel: AGENT_CONFIG.knowledgeBase.model,
-		},
-	];
+1. **Route verification** - Does it pick the right agent?
+2. **Structure validation** - Does it return valid data?
+3. **Edge case handling** - Does it handle weird inputs?
 
-	testCases.forEach(({ name, query, expectedAgent, expectedModel }) => {
-		it(name, async () => {
-			const result = await selectAgent(query);
-			expect(result.selectedAgent).toBe(expectedAgent);
-			expect(result.model).toBe(expectedModel);
-		});
-	});
-});
-```
+We won't test exact text, just the routing decisions and structure.
+
+---
+
+## The Test Suite
+
+Location: `app/agents/__tests__/selector.test.ts`
 
 ### Running the Tests
 
+**No server needed!** Tests call the API handler directly.
+
 ```bash
-yarn test selector-agent
+yarn test:selector
+```
+
+This runs all selector agent tests. First time might take 15-30 seconds (calling OpenAI API).
+
+### What We're Testing
+
+#### How Tests Work
+
+Tests import the API route handler directly:
+
+```typescript
+import { POST } from '@/app/api/select-agent/route';
+
+// Create a mock request
+const request = {
+  json: async () => ({
+    messages: [{ role: 'user', content: query }],
+  }),
+} as NextRequest;
+
+// Call the handler directly
+const response = await POST(request);
+const result = await response.json();
+```
+
+#### 1. LinkedIn Agent Routing
+
+```typescript
+it('should route LinkedIn post creation to linkedin agent', async () => {
+  const result = await selectAgent(
+    'Write a LinkedIn post about learning TypeScript'
+  );
+
+  expect(result.agent).toBe('linkedin');
+  expect(result.query).toBeTruthy();
+});
+```
+
+**What we're checking:**
+- ✅ Routes to `'linkedin'` agent
+- ✅ Returns a non-empty refined query
+
+#### 2. RAG Agent Routing
+
+```typescript
+it('should route technical documentation questions to rag agent', async () => {
+  const result = await selectAgent('How do React hooks work?');
+
+  expect(result.agent).toBe('rag');
+  expect(result.query).toBeTruthy();
+});
+```
+
+**What we're checking:**
+- ✅ Routes to `'rag'` agent
+- ✅ Technical questions go to RAG
+
+#### 3. Response Structure
+
+```typescript
+it('should return valid response structure', async () => {
+  const result = await selectAgent('Any question here');
+
+  expect(result).toHaveProperty('agent');
+  expect(result).toHaveProperty('query');
+  expect(['linkedin', 'rag']).toContain(result.agent);
+});
+```
+
+**What we're checking:**
+- ✅ Has required fields (`agent` and `query`)
+- ✅ Agent is valid ('linkedin' or 'rag')
+
+#### 4. Edge Cases
+
+```typescript
+it('should handle very short queries', async () => {
+  const result = await selectAgent('Help');
+
+  expect(['linkedin', 'rag']).toContain(result.agent);
+});
+```
+
+**What we're checking:**
+- ✅ Doesn't crash on short input
+- ✅ Still routes to a valid agent
+
+---
+
+## Running the Tests
+
+### First Run
+
+```bash
+yarn test:selector
 ```
 
 **Expected output:**
 ```
-PASS app/libs/openai/agents/__tests__/selector-agent.test.ts
-  selectAgent
-    ✓ should select LinkedIn agent for LinkedIn-related queries (2007 ms)
-    ✓ should select Knowledge Base agent for coding queries (1046 ms)
+PASS app/agents/__tests__/selector.test.ts
+  Selector Agent Routing
+    LinkedIn Agent Routing
+      ✓ should route LinkedIn post creation to linkedin agent (2145ms)
+      ✓ should route career advice to linkedin agent (1832ms)
+      ✓ should route professional networking questions to linkedin agent (1654ms)
+    RAG Agent Routing
+      ✓ should route technical documentation questions to rag agent (1723ms)
+      ✓ should route coding questions to rag agent (1567ms)
+      ✓ should route framework questions to rag agent (1689ms)
+    Response Structure
+      ✓ should return valid response structure (1543ms)
+      ✓ should refine queries (1698ms)
+    Edge Cases
+      ✓ should handle very short queries (1421ms)
+      ✓ should handle out-of-domain queries (1589ms)
+      ✓ should handle ambiguous queries (1623ms)
 
 Test Suites: 1 passed, 1 total
-Tests:       2 passed, 2 total
+Tests:       11 passed, 11 total
+Time:        17.234s
 ```
+
+### What to Expect
+
+- ✅ Tests take 15-20 seconds (calling OpenAI API)
+- ✅ All 11 tests should pass
+- ⚠️ Occasional routing variations are normal (non-determinism)
+
+**How it works:** Tests import and call the API route handler directly, bypassing the need for a running server. This is faster and more reliable for testing.
 
 ---
 
-## Your Challenge: Add More Test Cases
+## When Tests Fail
 
-The current tests only cover 2 scenarios. Your job is to expand test coverage!
+### Common Issues
 
-### Challenge 1: Add Edge Cases
-
-Add tests for queries that might confuse the selector:
-
-```typescript
-// TODO: Add this test case
-{
-	name: 'should handle ambiguous queries',
-	query: 'Tell me about JavaScript',
-	// Could be either agent - verify it picks one consistently
-	expectedAgent: ???, // You decide!
-}
+**❌ "Timeout exceeded"**
 ```
-
-### Challenge 2: Test Query Refinement
-
-The selector can refine queries. Test this behavior:
-
-```typescript
-it('should refine vague queries', async () => {
-	const result = await selectAgent('How do I do that thing?');
-
-	// The refined query should be more specific
-	expect(result.agentQuery.length).toBeGreaterThan(20);
-
-	// Should still be related to original query
-	expect(result.agentQuery.toLowerCase()).toContain('thing');
-});
+Test timeout of 5000ms exceeded
 ```
-
-### Challenge 3: Test Unsupported Queries
-
-**NOTE from tests:** There's a TODO comment:
-```typescript
-// TODO: add some test for queries which should NOT be supported
-```
-
-Add tests for queries that shouldn't be handled:
-
-```typescript
-const unsupportedQueries = [
-	'What is the weather today?',           // Not in knowledge base
-	'Book me a flight to Paris',            // Action request
-	'Translate this to Spanish: Hello',     // Translation
-	'What is 2 + 2?',                       // Basic math
-];
-
-unsupportedQueries.forEach(query => {
-	it(`should handle unsupported query: "${query}"`, async () => {
-		const result = await selectAgent(query);
-
-		// Verify it picks an agent (doesn't error)
-		expect(result.selectedAgent).toBeTruthy();
-
-		// Optional: log for manual review
-		console.log(`"${query}" → ${result.selectedAgent}`);
-	});
-});
-```
-
-### Challenge 4: Test Performance
-
-AI calls can be slow. Test that responses are reasonable:
-
-```typescript
-it('should respond within acceptable time', async () => {
-	const start = Date.now();
-
-	await selectAgent('Write a LinkedIn post about AI');
-
-	const duration = Date.now() - start;
-
-	// Should respond in under 5 seconds
-	expect(duration).toBeLessThan(5000);
-}, 10000); // 10s timeout for the test itself
-```
-
-### Challenge 5: Test LinkedIn Detection
-
-LinkedIn queries should be reliably detected:
-
-```typescript
-const linkedInQueries = [
-	'Write a LinkedIn post about TypeScript',
-	'Help me improve my LinkedIn profile',
-	'Create a professional summary for LinkedIn',
-	'What should I post on LinkedIn about my new job?',
-];
-
-linkedInQueries.forEach(query => {
-	it(`should route LinkedIn query to LinkedIn agent: "${query}"`, async () => {
-		const result = await selectAgent(query);
-		expect(result.selectedAgent).toBe('linkedin');
-	});
-});
-```
-
-### Challenge 6: Test Knowledge Base Detection
-
-Technical queries should go to knowledge base:
-
-```typescript
-const knowledgeBaseQueries = [
-	'How do React hooks work?',
-	'Explain async/await in JavaScript',
-	'What are the benefits of TypeScript?',
-	'How do I use useState?',
-];
-
-knowledgeBaseQueries.forEach(query => {
-	it(`should route technical query to knowledge base: "${query}"`, async () => {
-		const result = await selectAgent(query);
-		expect(result.selectedAgent).toBe('knowledgeBase');
-	});
-});
-```
-
----
-
-## Testing Structured Output
-
-The selector uses OpenAI's structured output feature. Let's verify it works:
-
-### Test 1: Schema Compliance
-
-```typescript
-it('should return response matching schema', async () => {
-	const result = await selectAgent('Any query here');
-
-	// Validate against Zod schema
-	const validation = agentResponseSchema.safeParse({
-		selectedAgent: result.selectedAgent,
-		agentQuery: result.agentQuery,
-	});
-
-	expect(validation.success).toBe(true);
-});
-```
-
-### Test 2: Valid Agent Types
-
-```typescript
-it('should only return valid agent types', async () => {
-	const queries = [
-		'LinkedIn post about AI',
-		'How does useEffect work?',
-		'Tell me about JavaScript',
-	];
-
-	for (const query of queries) {
-		const result = await selectAgent(query);
-
-		// Must be one of the defined agent types
-		expect(['linkedin', 'knowledgeBase']).toContain(result.selectedAgent);
-	}
-});
-```
-
-### Test 3: Non-Empty Refined Query
-
-```typescript
-it('should always return a refined query', async () => {
-	const result = await selectAgent('Help me');
-
-	expect(result.agentQuery).toBeTruthy();
-	expect(result.agentQuery.length).toBeGreaterThan(0);
-});
-```
-
----
-
-## Debugging Failed Tests
-
-If tests fail, here's how to debug:
-
-### 1. Check API Keys
-
-```bash
-# Verify OpenAI key is set
-echo $OPENAI_API_KEY
-```
-
-### 2. Inspect Test Output
-
-Add logging to see what the selector returns:
-
-```typescript
-it('debug test', async () => {
-	const result = await selectAgent('Your query here');
-
-	console.log('Selected agent:', result.selectedAgent);
-	console.log('Refined query:', result.agentQuery);
-	console.log('Model:', result.model);
-
-	// Your assertions here
-});
-```
-
-### 3. Run Tests with Verbose Output
-
-```bash
-yarn test selector-agent --verbose
-```
-
-### 4. Test Timeout Issues
-
-AI tests can be slow. Increase timeout if needed:
-
-```typescript
-it('slow test', async () => {
-	// Test code here
-}, 15000); // 15 second timeout
-```
-
----
-
-## Common Issues
-
-**❌ "Timeout of 5000ms exceeded"**
-→ Increase test timeout or check OpenAI API connection
-
-**❌ "OPENAI_API_KEY is missing"**
-→ Check `.env` file exists and is loaded
-
-**❌ "Failed to parse response"**
-→ Check OpenAI API status, might be rate limited
+**Fix:** Tests have 15s timeout - this means API is slow or down. Check:
+- OpenAI API status
+- Your internet connection
+- Rate limits
 
 **❌ "Unexpected agent selected"**
-→ AI is non-deterministic; consider if your test assumption is correct
-
----
-
-## Best Practices for AI Testing
-
-### ✅ DO:
-- Test structure, not exact content
-- Use generous timeouts
-- Test multiple similar queries
-- Log unexpected results for analysis
-- Use structured output for consistency
-
-### ❌ DON'T:
-- Expect exact text matches
-- Test too frequently (rate limits!)
-- Assume deterministic behavior
-- Skip error handling tests
-- Forget to mock in CI/CD (use recorded responses)
-
----
-
-## Your Assignment
-
-Complete these tasks:
-
-**Task 1:** Run existing tests
-```bash
-yarn test selector-agent
 ```
-Verify they pass ✅
-
-**Task 2:** Add 5 new test cases
-- At least 2 for LinkedIn queries
-- At least 2 for Knowledge Base queries
-- At least 1 edge case
-
-**Task 3:** Add unsupported query tests
-- Implement the TODO comment
-- Test queries outside your domain
-
-**Task 4:** Add performance test
-- Measure response time
-- Set reasonable threshold
-
-**Task 5:** Run full test suite
-```bash
-yarn test selector-agent
+Expected: 'linkedin'
+Received: 'rag'
 ```
-All tests should pass ✅
+**Fix:** This can happen! LLMs are non-deterministic. Ask yourself:
+- Is my test query actually clear?
+- Could it reasonably go to either agent?
+- Maybe my expectation is wrong?
+
+**❌ "Missing API key"**
+```
+Error: OPENAI_API_KEY is not set
+```
+**Fix:** Check your `.env.local` file has the key
 
 ---
 
-## Example: Complete Test Suite
+## Understanding Non-Determinism
 
-Here's what your expanded test file might look like:
+### Why Tests Might Fail Occasionally
 
 ```typescript
-import { selectAgent } from '../selector-agent';
-import { AGENT_CONFIG } from '../types';
+// This query is ambiguous:
+"Tell me about JavaScript"
 
-describe('selectAgent', () => {
-	// Basic functionality
-	describe('Basic Agent Selection', () => {
-		const testCases = [
-			{
-				name: 'should select LinkedIn agent for LinkedIn-related queries',
-				query: 'Write a LinkedIn post about learning JavaScript',
-				expectedAgent: 'linkedin',
-			},
-			{
-				name: 'should select Knowledge Base agent for coding queries',
-				query: 'Why are enums in TypeScript useful?',
-				expectedAgent: 'knowledgeBase',
-			},
-		];
+// Could route to:
+// - 'rag' → technical documentation
+// - 'linkedin' → career advice about learning JS
 
-		testCases.forEach(({ name, query, expectedAgent }) => {
-			it(name, async () => {
-				const result = await selectAgent(query);
-				expect(result.selectedAgent).toBe(expectedAgent);
-			}, 10000);
-		});
-	});
-
-	// Schema validation
-	describe('Structured Output Validation', () => {
-		it('should return valid schema', async () => {
-			const result = await selectAgent('Any query');
-			expect(result).toHaveProperty('selectedAgent');
-			expect(result).toHaveProperty('agentQuery');
-			expect(result).toHaveProperty('model');
-		}, 10000);
-	});
-
-	// Edge cases
-	describe('Edge Cases', () => {
-		it('should handle empty query', async () => {
-			const result = await selectAgent('');
-			expect(result.selectedAgent).toBeTruthy();
-		}, 10000);
-
-		it('should handle very long query', async () => {
-			const longQuery = 'word '.repeat(500);
-			const result = await selectAgent(longQuery);
-			expect(result.selectedAgent).toBeTruthy();
-		}, 10000);
-	});
-
-	// Performance
-	describe('Performance', () => {
-		it('should respond quickly', async () => {
-			const start = Date.now();
-			await selectAgent('Quick test');
-			const duration = Date.now() - start;
-			expect(duration).toBeLessThan(5000);
-		}, 10000);
-	});
-});
+// Both are valid!
 ```
+
+### How to Handle It
+
+1. **Make queries clearer:**
+```typescript
+❌ "Tell me about JavaScript"
+✅ "Write a LinkedIn post about JavaScript"
+✅ "How do I use JavaScript async/await?"
+```
+
+2. **Accept some randomness:**
+```typescript
+// Instead of this:
+expect(data.selectedAgent).toBe('rag');
+
+// Consider this for ambiguous queries:
+expect(['linkedin', 'rag']).toContain(data.selectedAgent);
+```
+
+---
+
+## What We're NOT Testing
+
+Remember, we're keeping it simple:
+
+❌ **Not testing:**
+- Exact refined query text
+- Response quality or tone
+- Specific word choices
+- LLM creativity
+
+✅ **Only testing:**
+- Routing decisions
+- Response structure
+- Error handling
+- Valid agent types
+
+This keeps tests stable and reliable despite AI non-determinism.
+
+---
+
+## Your Turn
+
+**Run the tests:**
+```bash
+yarn test:selector
+```
+
+**Verify:**
+- All 11 tests pass ✅
+- Takes 15-20 seconds
+- No errors in output
+
+If tests fail, review the "When Tests Fail" section above.
+
+**Note:** Tests call the API handler directly (no server needed). This is a common pattern in Next.js testing - you import the route handler and call it like a regular function.
 
 ---
 
 ## What's Next?
 
-Congratulations! You now have:
+Now you have:
+- ✅ Working agent system
 - ✅ Observability with Helicone
-- ✅ Comprehensive agent selector tests
-- ✅ Confidence in your routing logic
+- ✅ Test coverage for routing
 
-Next steps:
-1. **Deploy to production** with monitoring
-2. **Analyze usage patterns** from Helicone
-3. **Optimize based on data** (costs, performance)
-4. **Add more agents** as needed
+Next up: **Capstone Project** where you'll deploy your custom RAG system!
 
 ---
 
 ## Quick Reference
 
-**Run tests:**
 ```bash
-yarn test selector-agent
+# Run selector tests
+yarn test:selector
+
+# Run all tests
+yarn test
+
+# Run specific test
+yarn test:selector -t "LinkedIn"
+
+# Watch mode
+yarn test:selector --watch
 ```
-
-**Run with verbose output:**
-```bash
-yarn test selector-agent --verbose
-```
-
-**Run specific test:**
-```bash
-yarn test selector-agent -t "should select LinkedIn agent"
-```
-
-**Watch mode:**
-```bash
-yarn test selector-agent --watch
-```
-
----
-
-## Video Walkthrough
-
-Watch me write tests for the selector agent:
-
-<div style="position: relative; padding-bottom: 56.25%; height: 0;"><iframe src="https://www.loom.com/embed/testing-selector-agent" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe></div>

@@ -6,10 +6,10 @@ Production AI applications need visibility into API calls, costs, latency, and e
 
 ## What You'll Learn
 
-- Why observability matters for AI applications
-- How Helicone tracks OpenAI API usage
-- Setting up Helicone with minimal code changes
-- Monitoring costs, performance, and usage patterns
+-   Why observability matters for AI applications
+-   How Helicone tracks OpenAI API usage
+-   Setting up Helicone with minimal code changes
+-   Monitoring costs, performance, and usage patterns
 
 ---
 
@@ -39,23 +39,26 @@ Without observability, you're flying blind:
 **Helicone** is an open-source observability platform for LLM applications.
 
 **Key Features:**
-- 🔍 Request/response logging
-- 💰 Cost tracking per request
-- ⚡ Latency monitoring
-- 🎯 Custom properties for filtering
-- 📊 Usage analytics and dashboards
-- 🔐 User tracking and rate limiting
-- 🪝 Webhook integrations
+
+-   🔍 Request/response logging
+-   💰 Cost tracking per request
+-   ⚡ Latency monitoring
+-   🎯 Custom properties for filtering
+-   📊 Usage analytics and dashboards
+-   🔐 User tracking and rate limiting
+-   🪝 Webhook integrations
 
 **Why Helicone?**
-- Simple integration (literally 2 lines of code)
-- Open source (self-host option)
-- Free tier (generous limits)
-- OpenAI-specific optimizations
+
+-   Simple integration (literally 2 lines of code)
+-   Open source (self-host option)
+-   Free tier (generous limits)
+-   OpenAI-specific optimizations
 
 **Learn more:**
-- [Helicone Documentation](https://docs.helicone.ai/)
-- [Helicone GitHub](https://github.com/Helicone/helicone)
+
+-   [Helicone Documentation](https://docs.helicone.ai/)
+-   [Helicone GitHub](https://github.com/Helicone/helicone)
 
 ---
 
@@ -81,6 +84,7 @@ HELICONE_API_KEY=sk-helicone-xxxxxxxxxxxxxxxxxxxxxxxx
 The integration is incredibly simple. Update `app/libs/openai/openai.ts`:
 
 **Before:**
+
 ```typescript
 import OpenAI from 'openai';
 
@@ -90,15 +94,13 @@ export const openaiClient = new OpenAI({
 ```
 
 **After:**
+
 ```typescript
 import OpenAI from 'openai';
 
 export const openaiClient = new OpenAI({
 	apiKey: process.env.OPENAI_API_KEY as string,
-	baseURL: 'https://oai.helicone.ai/v1', // Add this
-	defaultHeaders: {                        // Add this
-		'Helicone-Auth': `Bearer ${process.env.HELICONE_API_KEY}`,
-	},
+	baseURL: `https://oai.helicone.ai/v1/${process.env.HELICONE_API_KEY}`,
 });
 ```
 
@@ -119,6 +121,7 @@ Your App → Helicone Proxy → OpenAI API
 ```
 
 Helicone sits between your app and OpenAI:
+
 1. Receives your API requests
 2. Logs metadata (timestamp, tokens, cost)
 3. Forwards request to OpenAI
@@ -136,24 +139,28 @@ Helicone sits between your app and OpenAI:
 Once integrated, visit your Helicone dashboard to see:
 
 **1. Request Log**
-- Every API call with full request/response
-- Timestamps, latency, tokens used
-- Model, user, and custom properties
+
+-   Every API call with full request/response
+-   Timestamps, latency, tokens used
+-   Model, user, and custom properties
 
 **2. Cost Analytics**
-- Total spend over time
-- Cost per model/agent/user
-- Token usage trends
+
+-   Total spend over time
+-   Cost per model/agent/user
+-   Token usage trends
 
 **3. Performance Metrics**
-- Average latency per endpoint
-- Error rates
-- Request volume
+
+-   Average latency per endpoint
+-   Error rates
+-   Request volume
 
 **4. User Analytics**
-- Top users by request count
-- Cost per user
-- User behavior patterns
+
+-   Top users by request count
+-   Cost per user
+-   User behavior patterns
 
 ---
 
@@ -166,10 +173,7 @@ import OpenAI from 'openai';
 
 export const openaiClient = new OpenAI({
 	apiKey: process.env.OPENAI_API_KEY as string,
-	baseURL: 'https://oai.helicone.ai/v1',
-	defaultHeaders: {
-		'Helicone-Auth': `Bearer ${process.env.HELICONE_API_KEY}`,
-	},
+	baseURL: `https://oai.helicone.ai/v1/${process.env.HELICONE_API_KEY}`,
 });
 
 // When making requests, add custom properties:
@@ -180,8 +184,8 @@ const response = await openaiClient.chat.completions.create(
 	},
 	{
 		headers: {
-			'Helicone-Property-Agent': 'linkedin',         // Track which agent
-			'Helicone-Property-User-Id': userId,           // Track user
+			'Helicone-Property-Agent': 'linkedin', // Track which agent
+			'Helicone-Property-User-Id': userId, // Track user
 			'Helicone-Property-Environment': 'production', // Track environment
 		},
 	}
@@ -195,15 +199,18 @@ Now you can filter and analyze by agent, user, or environment in the dashboard!
 ## Real-World Example: Cost Tracking
 
 **Scenario:** Your RAG system has two agents:
-- LinkedIn agent (fine-tuned model, expensive)
-- Knowledge Base agent (gpt-4o-mini, cheap)
+
+-   LinkedIn agent (fine-tuned model, expensive)
+-   Knowledge Base agent (gpt-4o-mini, cheap)
 
 **Without Helicone:**
-- Total OpenAI bill: $250/month
-- No idea which agent costs what
-- Can't optimize spend
+
+-   Total OpenAI bill: $250/month
+-   No idea which agent costs what
+-   Can't optimize spend
 
 **With Helicone:**
+
 ```
 LinkedIn agent:     $200/month (80% of cost)
   - 10,000 requests
@@ -215,6 +222,7 @@ Knowledge Base:     $50/month (20% of cost)
 ```
 
 **Action:** You discover LinkedIn agent is too expensive. Options:
+
 1. Cache common requests
 2. Switch to cheaper base model
 3. Add rate limiting
@@ -234,6 +242,7 @@ Knowledge Base:     $50/month (20% of cost)
 ### Task 2: Generate Some Traffic
 
 Make a few requests to your RAG system:
+
 ```bash
 yarn dev
 # Open http://localhost:3000
@@ -243,17 +252,19 @@ yarn dev
 ### Task 3: Explore Dashboard
 
 Visit Helicone dashboard and find:
-- Total requests made
-- Cost per request
-- Average latency
-- Request/response logs
+
+-   Total requests made
+-   Cost per request
+-   Average latency
+-   Request/response logs
 
 ### Task 4: Add Custom Properties (Optional)
 
 Update your agent implementations to include custom properties:
-- Agent name
-- User identifier
-- Query type
+
+-   Agent name
+-   User identifier
+-   Query type
 
 ---
 
@@ -276,19 +287,22 @@ Update your agent implementations to include custom properties:
 ## When to Use Helicone
 
 **✅ Always use in production**
-- Essential for debugging
-- Critical for cost management
-- Required for optimization
+
+-   Essential for debugging
+-   Critical for cost management
+-   Required for optimization
 
 **✅ Use in development/staging**
-- Catch issues before production
-- Understand usage patterns early
-- Test rate limiting and caching
+
+-   Catch issues before production
+-   Understand usage patterns early
+-   Test rate limiting and caching
 
 **❌ Maybe skip in local dev**
-- Extra hop adds latency
-- Less important for rapid iteration
-- Can enable when needed
+
+-   Extra hop adds latency
+-   Less important for rapid iteration
+-   Can enable when needed
 
 ---
 
@@ -297,25 +311,29 @@ Update your agent implementations to include custom properties:
 Other observability tools for LLMs:
 
 **LangSmith** (by LangChain)
-- Deep LangChain integration
-- More complex setup
-- Good for LangChain users
+
+-   Deep LangChain integration
+-   More complex setup
+-   Good for LangChain users
 
 **Weights & Biases**
-- ML experiment tracking
-- Heavier weight
-- Good for research/experimentation
+
+-   ML experiment tracking
+-   Heavier weight
+-   Good for research/experimentation
 
 **Custom Logging**
-- Full control
-- More work to build
-- Good for specific needs
+
+-   Full control
+-   More work to build
+-   Good for specific needs
 
 **Why we chose Helicone:**
-- Simplest integration (2 lines)
-- OpenAI-specific features
-- Great free tier
-- Open source option
+
+-   Simplest integration (2 lines)
+-   OpenAI-specific features
+-   Great free tier
+-   Open source option
 
 ---
 
@@ -324,46 +342,3 @@ Other observability tools for LLMs:
 You now have full observability into your RAG system!
 
 In the next section, we'll test our selector agent to ensure it routes queries correctly to the right agents.
-
-**Coming up:**
-1. **Testing Agents**: Write tests for agent selector
-2. **Performance Tuning**: Use Helicone data to optimize
-3. **Cost Optimization**: Reduce spend based on insights
-
----
-
-## Quick Reference
-
-**Helicone Integration:**
-```typescript
-const openaiClient = new OpenAI({
-	apiKey: process.env.OPENAI_API_KEY as string,
-	baseURL: 'https://oai.helicone.ai/v1',
-	defaultHeaders: {
-		'Helicone-Auth': `Bearer ${process.env.HELICONE_API_KEY}`,
-	},
-});
-```
-
-**Custom Properties:**
-```typescript
-await openaiClient.chat.completions.create(params, {
-	headers: {
-		'Helicone-Property-Agent': 'linkedin',
-		'Helicone-Property-User-Id': userId,
-	},
-});
-```
-
-**Useful Links:**
-- [Helicone Docs](https://docs.helicone.ai/)
-- [Helicone Dashboard](https://www.helicone.ai/dashboard)
-- [API Reference](https://docs.helicone.ai/getting-started/integration-method/openai)
-
----
-
-## Video Walkthrough
-
-Watch me set up Helicone step-by-step:
-
-<div style="position: relative; padding-bottom: 56.25%; height: 0;"><iframe src="https://www.loom.com/embed/helicone-integration" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe></div>
