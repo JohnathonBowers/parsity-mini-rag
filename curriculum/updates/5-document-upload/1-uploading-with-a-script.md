@@ -334,8 +334,3 @@ We'll explore automating this in the next section when we build the API route!
 
 Now that you can upload via script, let's build an API route so users can upload documents through the UI!
 
----
-
-## Video Walkthrough
-
-<div style="position: relative; padding-bottom: 56.25%; height: 0;"><iframe src="https://www.loom.com/embed/upload-script" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe></div>

@@ -362,12 +362,6 @@ Module 5 uses your chunking implementation in the document upload pipeline!
 
 ---
 
-## Video Walkthrough
-
-<div style="position: relative; padding-bottom: 56.25%; height: 0;"><iframe src="https://www.loom.com/embed/chunking-fundamentals" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe></div>
-
----
-
 ## Experiment: Try Different Parameters
 
 Now that you understand the implementation, experiment with different chunking parameters:

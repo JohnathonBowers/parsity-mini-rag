@@ -291,10 +291,3 @@ In the next section, you'll:
 
 Then you'll implement the LinkedIn agent that uses this model!
 
----
-
-## Video Walkthrough
-
-Watch me explain fine-tuning concepts:
-
-<div style="position: relative; padding-bottom: 56.25%; height: 0;"><iframe src="https://www.loom.com/embed/fine-tuning-overview" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe></div>
