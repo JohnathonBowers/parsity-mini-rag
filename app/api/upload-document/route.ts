@@ -51,42 +51,28 @@ export async function POST(req: NextRequest) {
 			// TODO: Step 6 - Generate embeddings for each batch
 			// Use openaiClient.embeddings.create()
 			// Model: 'text-embedding-3-small'
-			// Input: array of chunk.content strings
-			const embeddingResponse = await openaiClient.embeddings.create({
-				model: 'text-embedding-3-small',
-				dimensions: 512,
-				input: batch.map((chunk) => chunk.content),
-			});
-			const vectors = batch.map((chunk, idx) => ({
-				id: chunk.id,
-				values: embeddingResponse.data[idx].embedding,
-				metadata: chunk.metadata,
-			}));
-			await index.upsert(vectors);
-			successCount += batch.length;
+			// Dimensions: 512
+			// Input: array of chunk.content strings from the batch
+
+			// TODO: Step 7 - Prepare vectors for Pinecone
+			// Map each chunk to a vector object with:
+			// - id: chunk.id
+			// - values: the embedding array from embeddingResponse.data[idx].embedding
+			// - metadata: chunk.metadata
+
+			// TODO: Step 8 - Upload to Pinecone
+			// Use index.upsert() to upload the vectors array
+			// Increment successCount by batch.length
 		}
 
-		// TODO: Step 7 - Prepare vectors for Pinecone
-		// Map each chunk to a vector object with:
-		// - id: unique identifier (e.g., url + chunkIndex)
-		// - values: the embedding array
-		// - metadata: { text, url, title, chunkIndex, totalChunks }
-
-		// TODO: Step 8 - Upload to Pinecone
-		// Use index.upsert() to upload the batch
-		// Track successful uploads
-
 		// TODO: Step 9 - Return success response
-		// Return JSON with success status and counts
+		// Return NextResponse.json() with:
+		// - success: true
+		// - chunksProcessed: chunks.length
+		// - vectorsUploaded: successCount
+		// - status: 200
 
-		return NextResponse.json(
-			{
-				success: true,
-				chunksProcessed: chunks.length,
-				vectorsUploaded: successCount,
-			},
-			{ status: 200 }
-		);
+		throw new Error('Upload document not fully implemented yet!');
 	} catch (error) {
 		console.error('Error uploading documents:', error);
 		return NextResponse.json(
