@@ -122,17 +122,4 @@ export function chunkText(
 function getLastWords(text: string, maxLength: number): string {
 	// TODO: Implement this function!
 	// YOUR CODE HERE
-	if (text.length <= maxLength) return text;
-
-	const words = text.split(' ');
-
-	let result = '';
-
-	for (let i = words.length - 1; i >= 0; i--) {
-		const word = words[i];
-		if (result.length + word.length + 1 > maxLength) break;
-		result = word + (result ? ' ' + result : '');
-	}
-
-	return result;
 }
