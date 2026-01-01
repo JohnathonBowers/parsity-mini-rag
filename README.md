@@ -188,9 +188,6 @@ This will scrape URLs, chunk the content, generate embeddings, and upload to Pin
 Fine-tune a model on Brian's LinkedIn posts:
 
 ```bash
-# Generate training data from posts
-yarn tsx app/scripts/generate-training-data.ts
-
 # (Optional) Estimate cost before training
 yarn tsx app/scripts/estimate-training-cost.ts
 
