@@ -9,6 +9,13 @@
  * Run this script with: yarn exercise:word-math
  */
 
+// Note: Not every point in vector space maps neatly to a real-word concept.
+// Sometimes, arithmetic on word vectors produces results that do not correspond
+// to any known word, or lands "between" multiple concepts. This is because
+// the embedding space is continuous and high-dimensional, while our vocabulary
+// is discrete and limited. So, the closest words found are "nearest neighbors,"
+// but may not perfectly express the original intent.
+
 import * as path from 'path';
 import * as fs from 'fs';
 import dotenv from 'dotenv';
@@ -25,8 +32,6 @@ if (fs.existsSync(envLocalPath)) {
 } else {
 	dotenv.config();
 }
-
-import { openaiClient } from '../../libs/openai/openai';
 
 // Load embeddings cache
 let embeddingsCache: Record<string, number[]> = {};
@@ -64,7 +69,11 @@ async function getEmbedding(text: string): Promise<number[]> {
 		return embeddingsCache[text];
 	}
 
+	// Only load OpenAI client if we need it
 	console.log(`⚠️  Word "${text}" not in cache, fetching from OpenAI API...`);
+	console.log('⚠️  Loading OpenAI client...');
+	const { openaiClient } = await import('../../libs/openai/openai');
+
 	const response = await openaiClient.embeddings.create({
 		model: 'text-embedding-3-small',
 		dimensions: 512,
@@ -119,9 +128,9 @@ async function demonstrateWordArithmetic() {
 	matches1.forEach((match, i) => {
 		const emoji = i === matches1.length - 1 ? '❌' : '✅';
 		console.log(
-			`${emoji} ${i + 1}. ${match.word} (similarity: ${match.similarity.toFixed(
-				3
-			)})`
+			`${emoji} ${i + 1}. ${
+				match.word
+			} (similarity: ${match.similarity.toFixed(3)})`
 		);
 	});
 	console.log('');
@@ -155,9 +164,9 @@ async function demonstrateWordArithmetic() {
 	matches2.forEach((match, i) => {
 		const emoji = i === matches2.length - 1 ? '❌' : '✅';
 		console.log(
-			`${emoji} ${i + 1}. ${match.word} (similarity: ${match.similarity.toFixed(
-				3
-			)})`
+			`${emoji} ${i + 1}. ${
+				match.word
+			} (similarity: ${match.similarity.toFixed(3)})`
 		);
 	});
 	console.log('');
@@ -191,9 +200,9 @@ async function demonstrateWordArithmetic() {
 	matches3.forEach((match, i) => {
 		const emoji = i === matches3.length - 1 ? '❌' : '✅';
 		console.log(
-			`${emoji} ${i + 1}. ${match.word} (similarity: ${match.similarity.toFixed(
-				3
-			)})`
+			`${emoji} ${i + 1}. ${
+				match.word
+			} (similarity: ${match.similarity.toFixed(3)})`
 		);
 	});
 	console.log('');
@@ -227,9 +236,9 @@ async function demonstrateWordArithmetic() {
 	matches4.forEach((match, i) => {
 		const emoji = i === matches4.length - 1 ? '❌' : '✅';
 		console.log(
-			`${emoji} ${i + 1}. ${match.word} (similarity: ${match.similarity.toFixed(
-				3
-			)})`
+			`${emoji} ${i + 1}. ${
+				match.word
+			} (similarity: ${match.similarity.toFixed(3)})`
 		);
 	});
 	console.log('');
@@ -263,9 +272,9 @@ async function demonstrateWordArithmetic() {
 	matches5.forEach((match, i) => {
 		const emoji = i === matches5.length - 1 ? '❌' : '✅';
 		console.log(
-			`${emoji} ${i + 1}. ${match.word} (similarity: ${match.similarity.toFixed(
-				3
-			)})`
+			`${emoji} ${i + 1}. ${
+				match.word
+			} (similarity: ${match.similarity.toFixed(3)})`
 		);
 	});
 	console.log('');
@@ -299,9 +308,9 @@ async function demonstrateWordArithmetic() {
 	matches6.forEach((match, i) => {
 		const emoji = i === matches6.length - 1 ? '❌' : '✅';
 		console.log(
-			`${emoji} ${i + 1}. ${match.word} (similarity: ${match.similarity.toFixed(
-				3
-			)})`
+			`${emoji} ${i + 1}. ${
+				match.word
+			} (similarity: ${match.similarity.toFixed(3)})`
 		);
 	});
 	console.log('');

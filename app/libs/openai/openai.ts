@@ -1,9 +1,6 @@
 /**
  * OPENAI CLIENT AND AGENT CONFIGURATION
  *
- * This file sets up the OpenAI client and defines different AI agents for various tasks.
- * It demonstrates key concepts in building multi-agent AI systems.
- *
  * KEY CONCEPTS:
  *
  * 1. FINE-TUNED vs BASE MODELS:
@@ -25,7 +22,6 @@
  * EXPERIMENT IDEAS:
  * - Try different base models (gpt-4o, gpt-3.5-turbo)
  * - Add temperature/top_p parameters for creativity control
- * - Create new specialized agents for different domains
  * - Add system prompts to agent configurations
  *
  * Learn more about fine-tuning: https://platform.openai.com/docs/guides/fine-tuning
