@@ -120,9 +120,39 @@ export function chunkText(
  * 8. Return the result
  */
 function getLastWords(text: string, maxLength: number): string {
-	// TODO: Implement this function!
-	// YOUR CODE HERE
+	// 1. Check if text.length <= maxLength, if so return text
+	if (text.length <= maxLength) {
+		return text;
+	}
 
-	// Placeholder return - replace with your implementation
-	throw new Error('getLastWords not implemented yet!');
+	// 2. Split text into words using .split(' ')
+	const wordList: string[] = text.split(' ');
+
+	// 3. Start with empty result string
+	let resultString: string = "";
+
+	// 4. Loop through words backwards
+	for (let i = wordList.length - 1; i >= 0; i--) {
+		
+		// 5. For each word, check if adding it would exceed maxLength.
+		let newWord: string = wordList[i];
+		
+		// 5a. Decide whether the new word needs a space after it 
+		//     in the result string.
+		if (resultString.length) {
+			newWord = wordList[i] + " ";
+		}
+
+		// 6. If it would exceed, break the loop
+		// 7. Otherwise, prepend the word to result
+		if (resultString.length + newWord.length > maxLength) {
+			break;
+		} else {
+			resultString = newWord + resultString;
+		}
+
+	}
+	// 8. Return the result
+	return resultString;
+
 }
