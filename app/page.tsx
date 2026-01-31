@@ -86,7 +86,21 @@ export default function Home() {
 				body: JSON.stringify({ messages: currentMessages }),
 			});
 
-			const { agent, query } = await agentResponse.json();
+			const agentData = await agentResponse.json();
+
+			// Check if the query was rejected by the guardrail
+			if (!agentResponse.ok) {
+				// Display the error message to the user
+				const errorMessage = {
+					id: uuidv4(),
+					role: 'assistant' as const,
+					content: agentData.message || 'Sorry, I cannot help with that query.',
+				};
+				setMessages((prev) => [...prev, errorMessage]);
+				return;
+			}
+
+			const { agent, query } = agentData;
 
 			// Step 2: Make direct API call
 			const response = await fetch('/api/chat', {
