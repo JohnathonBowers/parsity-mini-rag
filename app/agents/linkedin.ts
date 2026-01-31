@@ -5,22 +5,15 @@ import { streamText } from 'ai';
 export async function linkedInAgent(
 	request: AgentRequest
 ): Promise<AgentResponse> {
-	// TODO: Step 1 - Get the fine-tuned model ID
-	// Access process.env.OPENAI_FINETUNED_MODEL
-	// If not configured, you might want to throw an error or use a fallback
-
-	// TODO: Step 2 - Build the system prompt
-	// Include instructions for the LinkedIn agent
-	// Add context about the original and refined queries:
-	//   - request.originalQuery - what the user originally asked
-	//   - request.query - the refined/improved version
-	// Tell the model to create engaging LinkedIn posts
-
-	// TODO: Step 3 - Stream the response
-	// Use streamText() from the 'ai' package
-	// Pass the model using openai()
-	// Include system prompt and messages from request.messages
-	// Return the stream
-
-	throw new Error('LinkedIn agent not implemented yet!');
+	return streamText({
+		model: openai(process.env.OPENAI_FINETUNED_MODEL!),
+		temperature: 0.8,
+		messages: [
+			{
+				role: 'system',
+				content: `You are a LinkedIn post editor. Polish the user's LinkedIn post to make it more engaging, professional, and impactful while maintaining their authentic voice and message.`,
+			},
+			...request.messages,
+		],
+	});
 }
